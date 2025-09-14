@@ -1,0 +1,38 @@
+# ## Vivado/Xilinx ##
+#
+# Generated project directories
+/.Xil/
+/_xmsgs/
+/ip_user_files/
+/*.cache/
+/*.hw/
+/*.ip_user_files/
+/*.runs/
+/*.sim/
+/project_1/
+
+# Log and journal files
+*.log
+*.jou
+
+# Waveform database files
+*.wdb
+
+# Project and user-specific files
+*.xpr.user
+*.xpr.lock
+
+# Output products (bitstreams, etc.)
+# These are generated from the source, so they don't need to be in version control.
+*.bit
+*.bin
+*.mcs
+*.prm
+
+# Other generated files
+/webtalk/
+/hdl_prj/
+/ip_catalog/
+/usage_statistics_webtalk.html
+/webtalk.jou
+/webtalk.log
