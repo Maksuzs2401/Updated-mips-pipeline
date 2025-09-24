@@ -55,6 +55,9 @@ module risc_top(clk,reset);
   reg [4:0]  MEM_WB_reg_addr;
   reg        MEM_WB_RegWrite, MEM_WB_MemToReg;
   wire [31:0] WB_REG_data;
+  wire [1:0] ForwardA, ForwardB;
+  wire [31:0] forward_data_a, forward_data_b;
+
   //ports for verification
   
   // *********************IF stage************************//
@@ -128,11 +131,29 @@ module risc_top(clk,reset);
   end
 // ********************* EX stage ************************//  
   
+  // Logic for ForwardA MUX (controls ALU's first operand)
+  assign ForwardA = (EX_MEM_RegWrite && (EX_MEM_reg_addr != 5'b0) && (EX_MEM_reg_addr == ID_EX_rs)) ? 2'b10 : // Forward from MEM stage
+                    (MEM_WB_RegWrite && (MEM_WB_reg_addr != 5'b0) && (MEM_WB_reg_addr == ID_EX_rs)) ? 2'b01 : // Forward from WB stage
+                    2'b00; // No forwarding
+
+  // Logic for ForwardB MUX (controls ALU's second operand)
+  assign ForwardB = (EX_MEM_RegWrite && (EX_MEM_reg_addr != 5'b0) && (EX_MEM_reg_addr == ID_EX_rt)) ? 2'b10 : // Forward from MEM stage
+                    (MEM_WB_RegWrite && (MEM_WB_reg_addr != 5'b0) && (MEM_WB_reg_addr == ID_EX_rt)) ? 2'b01 : // Forward from WB stage
+                    2'b00; // No forwarding
   
-  assign ALU_INP_B = ID_EX_ALUsrc ? ID_EX_Immext : ID_EX_d2;
+  assign forward_data_a = (ForwardA == 2'b00) ? ID_EX_d1 : 
+                            (ForwardA == 2'b10) ? EX_MEM_ALU_RSLT : 
+                            WB_REG_data; // WB_REG_data is the final write-back data
+
+  assign forward_data_b = (ForwardB == 2'b00) ? ID_EX_d2 : 
+                            (ForwardB == 2'b10) ? EX_MEM_ALU_RSLT : 
+                            WB_REG_data; // WB_REG_data is the final write-back data
+
+  
+  assign ALU_INP_B = ID_EX_ALUsrc ? ID_EX_Immext : forward_data_b;
   assign EX_reg_addr = ID_EX_RegDst ? ID_EX_rd : ID_EX_rt;
   
-  alu_unit brain (.a(ID_EX_d1),.b(ALU_INP_B),.alu_opcode(ID_EX_ALUOP),
+  alu_unit brain (.a(forward_data_a),.b(ALU_INP_B),.alu_opcode(ID_EX_ALUOP),
                   .result(ALU_RSLT),.zero(ALU_Z_FLG));
 
 // ===================== EX-MEM pipeline regs ===================== //                  
